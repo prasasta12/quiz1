@@ -66,8 +66,9 @@ class QuizScreen(Screen):
         # Layout utama vertikal
         self.page_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
 
-        # Label pertanyaan
-        self.question_label = Label(text='', font_size=20, halign='left', valign='middle')
+        # Label pertanyaan (ditempatkan di tengah, tanpa nomor soal)
+        self.question_label = Label(text='', font_size=22, halign='center', valign='middle', size_hint=(1, 0.35))
+        # center the text block and wrap
         self.question_label.bind(size=self._update_text_size)
         self.question_label.color = THEME_TEXT_COLOR
 
@@ -104,6 +105,7 @@ class QuizScreen(Screen):
         self.next_btn.bind(on_release=self.next_question)
 
         # Tambahkan widget ke layout
+        # Place the question label on top and options below; question label has larger space for vertical centering
         self.page_layout.add_widget(self.question_label)
         self.page_layout.add_widget(self.answer_layout)
         self.page_layout.add_widget(self.info_label)
@@ -125,8 +127,8 @@ class QuizScreen(Screen):
     def show_question(self):
         """Tampilkan pertanyaan dan isi pilihan jawaban."""
         q = QUESTIONS[self.current_index]
-        # Tampilkan nomor soal dan teks
-        self.question_label.text = f"Soal {self.current_index + 1}: {q['question']}"
+        # Tampilkan teks pertanyaan saja (tanpa nomor)
+        self.question_label.text = q['question']
 
         # Tampilkan pilihan pada ToggleButton
         for i, choice in enumerate(q['choices']):
