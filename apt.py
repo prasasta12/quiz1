@@ -135,9 +135,13 @@ class QuizScreen(Screen):
         self.timer_label.text = self._format_time(self.total_seconds)
         # schedule update every second
         self._timer_event = Clock.schedule_interval(self._update_timer, 1)
-        # create a shuffled copy of the questions for this attempt
-        self.questions = QUESTIONS.copy()
-        random.shuffle(self.questions)
+        # select up to 10 random questions for this attempt
+        if len(QUESTIONS) <= 10:
+            self.questions = QUESTIONS.copy()
+            random.shuffle(self.questions)
+        else:
+            # pick 10 unique random questions
+            self.questions = random.sample(QUESTIONS, 10)
         self.show_question()
 
     def show_question(self):
