@@ -7,6 +7,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 from kivy.clock import Clock
+import random
 
 # Atur ukuran jendela agar tampak rapi di desktop (opsional)
 Window.size = (600, 400)
@@ -134,11 +135,14 @@ class QuizScreen(Screen):
         self.timer_label.text = self._format_time(self.total_seconds)
         # schedule update every second
         self._timer_event = Clock.schedule_interval(self._update_timer, 1)
+        # create a shuffled copy of the questions for this attempt
+        self.questions = QUESTIONS.copy()
+        random.shuffle(self.questions)
         self.show_question()
 
     def show_question(self):
         """Tampilkan pertanyaan dan isi pilihan jawaban."""
-        q = QUESTIONS[self.current_index]
+        q = self.questions[self.current_index]
         # Tampilkan teks pertanyaan saja (tanpa nomor)
         self.question_label.text = q['question']
 
@@ -175,13 +179,13 @@ class QuizScreen(Screen):
         self.info_label.text = ''
 
         # Cek jawaban benar
-        correct = QUESTIONS[self.current_index]['answer']
+        correct = self.questions[self.current_index]['answer']
         if selected == correct:
             self.score += 1
 
         # Lanjut ke soal berikutnya atau ke hasil
         self.current_index += 1
-        if self.current_index < len(QUESTIONS):
+        if self.current_index < len(self.questions):
             self.show_question()
         else:
             # Tampilkan layar hasil
@@ -191,7 +195,7 @@ class QuizScreen(Screen):
                 delattr(self, '_timer_event')
             sm = self.manager
             result_screen = sm.get_screen('result')
-            result_screen.show_result(self.score, len(QUESTIONS))
+            result_screen.show_result(self.score, len(self.questions))
             sm.current = 'result'
 
     def _format_time(self, seconds: int) -> str:
