@@ -6,6 +6,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
+from kivy.clock import Clock
 
 # Atur ukuran jendela agar tampak rapi di desktop (opsional)
 Window.size = (600, 400)
@@ -98,6 +99,11 @@ class QuizScreen(Screen):
         # Info label uses an accent color for emphasis
         self.info_label = Label(text='', size_hint=(1, 0.1), color=THEME_ACCENT)
 
+        # Timer: 10 minutes (600 seconds)
+        self.total_seconds = 10 * 60
+        self.timer_label = Label(text=self._format_time(self.total_seconds), size_hint=(1, 0.1), color=THEME_TEXT_COLOR)
+
+
         # Tombol Next
         self.next_btn = Button(text='Next', size_hint=(1, 0.15))
         self.next_btn.background_color = THEME_BTN_COLOR
@@ -107,6 +113,7 @@ class QuizScreen(Screen):
         # Tambahkan widget ke layout
         # Place the question label on top and options below; question label has larger space for vertical centering
         self.page_layout.add_widget(self.question_label)
+        self.page_layout.add_widget(self.timer_label)
         self.page_layout.add_widget(self.answer_layout)
         self.page_layout.add_widget(self.info_label)
         self.page_layout.add_widget(self.next_btn)
@@ -122,6 +129,11 @@ class QuizScreen(Screen):
         self.current_index = 0
         self.score = 0
         self.info_label.text = ''
+        # Reset and start timer
+        self.total_seconds = 10 * 60
+        self.timer_label.text = self._format_time(self.total_seconds)
+        # schedule update every second
+        self._timer_event = Clock.schedule_interval(self._update_timer, 1)
         self.show_question()
 
     def show_question(self):
@@ -173,10 +185,37 @@ class QuizScreen(Screen):
             self.show_question()
         else:
             # Tampilkan layar hasil
+            # stop timer
+            if hasattr(self, '_timer_event'):
+                self._timer_event.cancel()
+                delattr(self, '_timer_event')
             sm = self.manager
             result_screen = sm.get_screen('result')
             result_screen.show_result(self.score, len(QUESTIONS))
             sm.current = 'result'
+
+    def _format_time(self, seconds: int) -> str:
+        m = seconds // 60
+        s = seconds % 60
+        return f"{m:02d}:{s:02d}"
+
+    def _update_timer(self, dt):
+        # decrement and update label
+        self.total_seconds -= 1
+        if self.total_seconds < 0:
+            # time's up — stop timer and show results
+            if hasattr(self, '_timer_event'):
+                self._timer_event.cancel()
+                delattr(self, '_timer_event')
+            # show result screen immediately
+            sm = self.manager
+            result_screen = sm.get_screen('result')
+            result_screen.show_result(self.score, len(QUESTIONS))
+            sm.current = 'result'
+            return False
+        else:
+            self.timer_label.text = self._format_time(self.total_seconds)
+            return True
 
 
 class ResultScreen(Screen):
