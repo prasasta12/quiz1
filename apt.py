@@ -3,11 +3,22 @@ from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 
 # Atur ukuran jendela agar tampak rapi di desktop (opsional)
 Window.size = (600, 400)
+
+# Tema laut: warna latar, aksen, dan teks
+# Window.clearcolor uses RGBA with values 0-1 (teal/blue background)
+Window.clearcolor = (0.05, 0.35, 0.45, 1)  # deep teal / sea color
+
+# Warna tema untuk teks dan tombol
+THEME_TEXT_COLOR = (1, 1, 1, 1)  # putih
+THEME_BTN_COLOR = (0.12, 0.6, 0.7, 1)  # lighter teal for buttons
+THEME_BTN_DOWN_COLOR = (0.02, 0.45, 0.55, 1)
+THEME_ACCENT = (0.0, 0.7, 0.9, 1)
 
 # Daftar pertanyaan: setiap item adalah dict dengan 'question', 'choices' dan 'answer' (index jawaban benar)
 QUESTIONS = [
@@ -72,7 +83,13 @@ class StartScreen(Screen):
 
         title = Label(text='Quiz Sederhana', font_size=32, size_hint=(1, 0.4))
         subtitle = Label(text='Selamat datang! Tekan Mulai untuk memulai quiz.', size_hint=(1, 0.2))
+        # Apply theme colors
+        title.color = THEME_TEXT_COLOR
+        subtitle.color = THEME_TEXT_COLOR
+
         start_btn = Button(text='Mulai', size_hint=(0.5, 0.2), pos_hint={'center_x': 0.5})
+        start_btn.background_color = THEME_BTN_COLOR
+        start_btn.color = THEME_TEXT_COLOR
 
         # Ketika tombol Mulai ditekan, pindah ke layar quiz dan mulai quiz dari awal
         start_btn.bind(on_release=self.start_quiz)
@@ -103,22 +120,38 @@ class QuizScreen(Screen):
         # Label pertanyaan
         self.question_label = Label(text='', font_size=20, halign='left', valign='middle')
         self.question_label.bind(size=self._update_text_size)
+        self.question_label.color = THEME_TEXT_COLOR
 
-        # Layout untuk pilihan jawaban secara horizontal
-        self.answer_layout = BoxLayout(orientation='vertical', spacing=8)
+        # Layout untuk pilihan jawaban — tampilkan seperti Quizizz: 2 kolom
+        self.answer_layout = GridLayout(cols=2, spacing=12, size_hint_y=None)
+        # We will control the height so the grid doesn't collapse
+        self.answer_layout.bind(minimum_height=self.answer_layout.setter('height'))
 
-        # Buat 4 ToggleButton untuk pilihan A-D
+        # Buat 4 ToggleButton untuk pilihan A-D, tampil seperti kartu mendatar
         self.choice_buttons = []
         for i in range(4):
-            tb = ToggleButton(text='', group='answers', allow_no_selection=True)
+            tb = ToggleButton(text='', group='answers', allow_no_selection=True, size_hint=(0.95, None), height=70)
+            # style toggle buttons to match theme and look like Quizizz cards
+            tb.background_color = THEME_BTN_COLOR
+            tb.color = THEME_TEXT_COLOR
+            tb.font_size = 16
+            tb.halign = 'left'
+            tb.valign = 'middle'
+            # bind text_size to the current width so text wraps correctly
+            tb.bind(size=lambda inst, val: setattr(inst, 'text_size', (inst.width - 20, None)))
+            # auto-adjust height when texture (rendered text) size changes
+            tb.bind(texture_size=lambda inst, val: setattr(inst, 'height', max(60, inst.texture_size[1] + 20)))
             self.choice_buttons.append(tb)
             self.answer_layout.add_widget(tb)
 
         # Label informasi (mis. minta pilih jawaban jika belum)
-        self.info_label = Label(text='', size_hint=(1, 0.1), color=(1,0,0,1))
+        # Info label uses an accent color for emphasis
+        self.info_label = Label(text='', size_hint=(1, 0.1), color=THEME_ACCENT)
 
         # Tombol Next
         self.next_btn = Button(text='Next', size_hint=(1, 0.15))
+        self.next_btn.background_color = THEME_BTN_COLOR
+        self.next_btn.color = THEME_TEXT_COLOR
         self.next_btn.bind(on_release=self.next_question)
 
         # Tambahkan widget ke layout
@@ -151,11 +184,15 @@ class QuizScreen(Screen):
             btn = self.choice_buttons[i]
             btn.text = f"{chr(65 + i)}. {choice}"
             btn.state = 'normal'  # reset pilihan
+            # update text wrapping and size
+            btn.text_size = (btn.width - 20, None)
+            btn.height = max(60, btn.texture_size[1] + 20)
 
         # Jika ada lebih sedikit pilihan dari 4, sembunyikan sisanya (tidak diperlukan di data ini)
         for j in range(len(q['choices']), 4):
             self.choice_buttons[j].text = ''
             self.choice_buttons[j].state = 'normal'
+            self.choice_buttons[j].height = 0
 
     def next_question(self, *args):
         """Menangani logika saat tombol Next ditekan."""
@@ -201,6 +238,8 @@ class ResultScreen(Screen):
 
         # Tombol untuk mengulang quiz
         restart_btn = Button(text='Ulangi', size_hint=(0.5, 0.2), pos_hint={'center_x': 0.5})
+        restart_btn.background_color = THEME_BTN_COLOR
+        restart_btn.color = THEME_TEXT_COLOR
         restart_btn.bind(on_release=self.restart)
 
         layout.add_widget(self.result_label)
